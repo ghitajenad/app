@@ -1,6 +1,19 @@
 .App {
   text-align: center;
 }
+.bgnav{
+  background-color:lightgray ;
+}
+
+.form1{
+  width: 35%;
+  margin: auto;
+}
+.form2{
+  width: 35%;
+  margin: auto;
+  
+}
 
 .App-logo {
   height: 40vmin;
@@ -12,7 +25,18 @@
     animation: App-logo-spin infinite 20s linear;
   }
 }
-
+.colorvar{
+  color: black;
+  background-color: lightgrey;
+  cursor: pointer;
+    padding: 6px 8px;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    border-radius: 5px;
+   
+  
+}
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -26,6 +50,41 @@
 
 .App-link {
   color: #61dafb;
+}
+.btnconnexion{
+  background-color: black;
+  cursor: pointer;
+  padding: 5px 8px;
+   width: 100%; 
+  border: 0;
+  outline: 0;
+  border-radius: 5px;
+  color: white;
+}
+.link-color {
+  color:grey;
+  
+  font-weight: bold;
+  text-decoration: none;
+  /* Supprime le soulignement */
+}
+.btn-inscription{
+    background-color: black;
+    cursor: pointer;
+    padding: 5px 8px;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    border-radius: 5px;
+    color: white;
+}
+    .form-container {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre pour le cadre */
+  width: 100%;
+  max-width: 600px; /* Largeur maximale du cadre */
 }
 
 @keyframes App-logo-spin {

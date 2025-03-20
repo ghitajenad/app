@@ -29,8 +29,9 @@ export const Login = () => {
     };
 
     return (
-        <div className="container mt-5 w-50">
-            <h2>Espace Utilisateur</h2>
+        <div className="form1">
+        <div className="container mt-5 content">
+            <h2 className="mb-2">Espace Utilisateur</h2>
             <form onSubmit={handleSubmit} className="border rounded p-4 m-5">
                 <h6>Veuillez saisir votre <strong>E-mail</strong> et votre <strong>Mot de passe</strong></h6>
                 
@@ -40,39 +41,39 @@ export const Login = () => {
                 {/* Email Field */}
                 <div className="row mb-3">
                     <div className="col-12">
-                        <label htmlFor="email" className="form-label ">E-mail</label>
+                        <label htmlFor="email" className="form-label mb-2 "><bold>E-mail</bold></label>
                         <input
                             type="email"
-                            className="form-control "
+                            className="form-control mb-2 "
                             id="email"
                             placeholder="Exemple@gmail.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                        />
+                            />
                     </div>
                 </div>
 
                 {/* Password Field */}
                 <div className="row mb-3">
                     <div className="col-12">
-                        <label htmlFor="password" className="form-label ">Mot de passe</label>
+                        <label htmlFor="password" className="form-label mb-2 "><bold>Mot de passe</bold></label>
                         <input
                             type="password"
-                            className="form-control"
+                            className="form-control mb-2 "
                             id="password"
                             placeholder="Mot de passe"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                        />
+                            />
                     </div>
                 </div>
 
                 {/* Submit Button */}
                 <div className="row mb-3">
                     <div className="col-12">
-                        <button type="submit" className="btn btn-primary w-100">
+                        <button type="submit" className=" btnconnexion ">
                             Connexion
                         </button>
                     </div>
@@ -80,16 +81,18 @@ export const Login = () => {
 
                 {/* Create Account Link */}
                 <div className="row">
-                    <div className="col-12 text-center">
+                    <div className="col-12 text-center m-2">
                         <strong>
                             Vous n'avez pas de compte ? 
                             <small>
-                                <Link to="/Inscription">Créer un compte</Link>
+                                <Link to="/Inscription"className="link-color"><em>Créer un compte .</em></Link>
+
                             </small>
                         </strong>
                     </div>
                 </div>
             </form>
         </div>
+                            </div>
     );
 };

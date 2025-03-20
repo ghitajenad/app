@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from 'react-router-dom';
-
+import '../App.css'
 export const Inscription = () => {
-  const navigate = useNavigate(); // Call useNavigate hook at the top of the component
+ const navigate = useNavigate(); // Call useNavigate hook at the top of the component
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -70,13 +70,15 @@ export const Inscription = () => {
     });
 
     // Navigate to login page after successful submission
-    navigate('/Login');  // Use navigate here to redirect
+    navigate('/');  // Use navigate here to redirect
   };
 
   return (
+    <div className='form2'>
+      <div className="container mt-5 content">
     <div className="container mt-5">
       <h2>Formulaire d'Inscription</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className='border rounded p-4 m-5'>
         <h6>Veuillez remplir le formulaire ci-dessous :</h6>
 
         {/* Display error message if any */}
@@ -84,10 +86,10 @@ export const Inscription = () => {
 
         {/* Nom */}
         <div className="mb-3">
-          <label htmlFor="nom" className="form-label">Nom</label>
+          <label htmlFor="nom" className="form-label text-start d-block">Nom</label>
           <input
             type="text"
-            className="form-control"
+            className="form-control text-start d-block"
             id="nom"
             name="nom"
             placeholder="Votre nom"
@@ -99,7 +101,7 @@ export const Inscription = () => {
 
         {/* Prénom */}
         <div className="mb-3">
-          <label htmlFor="prenom" className="form-label">Prénom</label>
+          <label htmlFor="prenom" className="form-label text-start d-block">Prénom</label>
           <input
             type="text"
             className="form-control"
@@ -114,7 +116,7 @@ export const Inscription = () => {
 
         {/* E-mail */}
         <div className="mb-3">
-          <label htmlFor="email" className="form-label">E-mail</label>
+          <label htmlFor="email" className="form-label text-start d-block">E-mail</label>
           <input
             type="email"
             className="form-control"
@@ -124,12 +126,12 @@ export const Inscription = () => {
             value={formData.email}
             onChange={handleChange}
             required
-          />
+            />
         </div>
 
         {/* Mot de Passe */}
         <div className="mb-3">
-          <label htmlFor="password" className="form-label">Mot de Passe</label>
+          <label htmlFor="password" className="form-label text-start d-block">Mot de Passe</label>
           <input
             type="password"
             className="form-control"
@@ -139,12 +141,12 @@ export const Inscription = () => {
             value={formData.password}
             onChange={handleChange}
             required
-          />
+            />
         </div>
 
         {/* CIN */}
         <div className="mb-3">
-          <label htmlFor="cin" className="form-label">CIN</label>
+          <label htmlFor="cin" className="form-label text-start d-block">CIN</label>
           <input
             type="text"
             className="form-control"
@@ -154,12 +156,12 @@ export const Inscription = () => {
             value={formData.cin}
             onChange={handleChange}
             required
-          />
+            />
         </div>
 
         {/* Role */}
         <div className="mb-3">
-          <label htmlFor="role" className="form-label">Role</label>
+          <label htmlFor="role" className="form-label text-start d-block">Role</label>
           <select
             className="form-control"
             id="role"
@@ -176,7 +178,7 @@ export const Inscription = () => {
 
         {/* Tel */}
         <div className="mb-3">
-          <label htmlFor="tel" className="form-label">Numéro de téléphone</label>
+          <label htmlFor="tel" className="form-label text-start d-block">Numéro de téléphone</label>
           <input
             type="tel"
             className="form-control"
@@ -186,14 +188,21 @@ export const Inscription = () => {
             value={formData.tel}
             onChange={handleChange}
             required
-          />
+            />
         </div>
 
         {/* Submit button */}
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className='btn-inscription'>
           S'inscrire
+          
         </button>
+        
       </form>
+      
+      
     </div>
+            </div>
+            </div>
+ 
   );
 };
