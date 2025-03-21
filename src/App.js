@@ -12,6 +12,7 @@ function App() {
         <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/Inscription" element={<Inscription />} />
+            //this is a text
         </Routes>
         <Footer/>
       </Router>
