@@ -89,7 +89,7 @@ export const Inscription = () => {
           <label htmlFor="nom" className="form-label text-start d-block">Nom</label>
           <input
             type="text"
-            className="form-control text-start d-block"
+            className="form-control"
             id="nom"
             name="nom"
             placeholder="Votre nom"

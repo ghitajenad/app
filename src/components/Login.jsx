@@ -17,13 +17,9 @@ export const Login = () => {
             return;
         }
 
-        // Clear error message if all fields are filled
         setError("");
-
-        // You can handle form submission logic here (e.g., API request)
         console.log("Form Submitted:", { email, password });
 
-        // Clear the form after submission
         setEmail("");
         setPassword("");
     };
@@ -35,10 +31,8 @@ export const Login = () => {
             <form onSubmit={handleSubmit} className="border rounded p-4 m-5">
                 <h6>Veuillez saisir votre <strong>E-mail</strong> et votre <strong>Mot de passe</strong></h6>
                 
-                {/* Error message */}
                 {error && <div className="alert alert-danger">{error}</div>}
 
-                {/* Email Field */}
                 <div className="row mb-3">
                     <div className="col-12">
                         <label htmlFor="email" className="form-label mb-2 "><bold>E-mail</bold></label>
@@ -54,7 +48,6 @@ export const Login = () => {
                     </div>
                 </div>
 
-                {/* Password Field */}
                 <div className="row mb-3">
                     <div className="col-12">
                         <label htmlFor="password" className="form-label mb-2 "><bold>Mot de passe</bold></label>
@@ -70,7 +63,6 @@ export const Login = () => {
                     </div>
                 </div>
 
-                {/* Submit Button */}
                 <div className="row mb-3">
                     <div className="col-12">
                         <button type="submit" className=" btnconnexion ">
@@ -79,7 +71,6 @@ export const Login = () => {
                     </div>
                 </div>
 
-                {/* Create Account Link */}
                 <div className="row">
                     <div className="col-12 text-center m-2">
                         <strong>
