@@ -1,29 +1,25 @@
 <?php
 
-// use Illuminate\Support\Facades\Route;
-
-// Route::get('/test', function () {
-//     return response()->json(['message' => 'API is working!']);
-// });
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use Laravel\Sanctum\Sanctum;
-use App\Http\Controllers\Api\MonController;
 
-Route::get('/mon-controller', [MonController::class, 'index']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
-// Route d'inscription
-Route::post('/register', [AuthController::class, 'register']);
+// Public routes
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
 
-// Route de connexion
-Route::post('/login', [AuthController::class, 'login']);
-
-// Route protégée (Dashboard)
-Route::middleware('auth:sanctum')->get('/dashboard', function (Request $request) {
-    return response()->json(['message' => 'Bienvenue sur le dashboard', 'user' => $request->user()]);
+// Protected routes
+Route::middleware('auth:api')->group(function () {
+    Route::get('user', [AuthController::class, 'me']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    
+    // Add your other protected routes here
 });
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+

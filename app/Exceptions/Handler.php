@@ -4,15 +4,46 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
 {
-    public function render($request, Throwable $exception): JsonResponse
+    /**
+     * The list of the inputs that are never flashed to the session on validation exceptions.
+     *
+     * @var array<int, string>
+     */
+    protected $dontFlash = [
+        'current_password',
+        'password',
+        'password_confirmation',
+    ];
+
+    /**
+     * Register the exception handling callbacks for the application.
+     */
+    public function register(): void
     {
-        return response()->json([
-            'message' => $exception->getMessage(),
-            'status' => method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 500
-        ], method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 500);
+        $this->reportable(function (Throwable $e) {
+            //
+        });
+
+        // Convert API exceptions to JSON responses
+        $this->renderable(function (Throwable $e, Request $request) {
+            if ($request->is('api/*') || $request->wantsJson()) {
+                $status = 500;
+                
+                if ($e instanceof NotFoundHttpException) {
+                    $status = 404;
+                }
+                
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage() ?: 'Server Error',
+                ], $status);
+            }
+        });
     }
 }
+
