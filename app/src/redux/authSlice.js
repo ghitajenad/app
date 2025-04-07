@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 
-// Initialize state from localStorage if available
+// Initialiser l'état à partir du localStorage si disponible
 const loadState = () => {
   try {
     const serializedUser = localStorage.getItem("user")
@@ -8,11 +8,18 @@ const loadState = () => {
     return {
       user: serializedUser ? JSON.parse(serializedUser) : null,
       token: serializedToken || null,
+      isAuthenticated: !!serializedToken,
+      isLoading: false,
+      error: null,
     }
   } catch (err) {
+    console.error("Erreur lors du chargement de l'état:", err)
     return {
       user: null,
       token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
     }
   }
 }
@@ -23,35 +30,54 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setUser: (state, action) => {
-      state.user = action.payload
-      localStorage.setItem("user", JSON.stringify(action.payload))
+    loginStart: (state) => {
+      state.isLoading = true
+      state.error = null
     },
-    setCredentials: (state, action) => {
-      const { user, token } = action.payload
-      state.user = user
-      state.token = token
+    loginSuccess: (state, action) => {
+      state.isLoading = false
+      state.isAuthenticated = true
+      state.user = action.payload.user
+      state.token = action.payload.token
+      state.error = null
 
-      // Save to localStorage for persistence
-      localStorage.setItem("user", JSON.stringify(user))
-      localStorage.setItem("token", token)
+      // Sauvegarder dans localStorage
+      localStorage.setItem("user", JSON.stringify(action.payload.user))
+      localStorage.setItem("token", action.payload.token)
+
+      // Log pour déboguer
+      console.log("Token sauvegardé dans localStorage:", action.payload.token)
     },
-    clearCredentials: (state) => {
+    loginFailure: (state, action) => {
+      state.isLoading = false
+      state.error = action.payload
+    },
+    logout: (state) => {
       state.user = null
       state.token = null
+      state.isAuthenticated = false
+      state.error = null
 
-      // Clear from localStorage
+      // Supprimer du localStorage
       localStorage.removeItem("user")
       localStorage.removeItem("token")
+    },
+    clearError: (state) => {
+      state.error = null
     },
   },
 })
 
-export const { setUser, setCredentials, clearCredentials } = authSlice.actions
-export default authSlice.reducer
+export const { loginStart, loginSuccess, loginFailure, logout, clearError } = authSlice.actions
 
-// Selectors
-export const selectCurrentUser = (state) => state.auth.user
+// Sélecteurs
+export const selectUser = (state) => state.auth.user
 export const selectToken = (state) => state.auth.token
-export const selectIsAuthenticated = (state) => Boolean(state.auth.token)
+export const selectIsAuthenticated = (state) => state.auth.isAuthenticated
+export const selectIsAdmin = (state) => state.auth.user?.role === "admin"
+export const selectIsAgent = (state) => state.auth.user?.role === "agent"
+export const selectAuthError = (state) => state.auth.error
+export const selectIsLoading = (state) => state.auth.isLoading
+
+export default authSlice.reducer
 

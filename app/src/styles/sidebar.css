@@ -1,0 +1,136 @@
+.sidebar {
+    width: 280px;
+    background-color: #1e3a8a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+  
+  .sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .sidebar-logo {
+    max-width: 150px;
+    margin-bottom: 10px;
+  }
+  
+  .sidebar-header h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+    opacity: 0.9;
+  }
+  
+  .user-info {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-right: 12px;
+  }
+  
+  .user-details {
+    flex: 1;
+  }
+  
+  .user-name {
+    margin: 0 0 3px 0;
+    font-weight: 500;
+  }
+  
+  .user-role {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+  
+  .sidebar-nav {
+    flex: 1;
+    padding: 20px 0;
+    overflow-y: auto;
+  }
+  
+  .sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .sidebar-nav li {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+  }
+  
+  .sidebar-nav li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .sidebar-nav li.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 500;
+  }
+  
+  .sidebar-nav li i {
+    margin-right: 10px;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+  }
+  
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .logout-button {
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+  }
+  
+  .logout-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .logout-button i {
+    margin-right: 8px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 100%;
+      height: auto;
+      position: relative;
+    }
+  }
+  
+  

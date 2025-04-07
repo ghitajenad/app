@@ -1,13 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import "bootstrap/dist/css/bootstrap.min.css"
-import { useNavigate } from "react-router-dom"
-import "../App.css"
 import { useRegisterMutation } from "../redux/apiSlice"
+import "../styles/inscription.css"
 
 export const Inscription = () => {
-  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: "",
     firstname: "",
@@ -18,12 +15,13 @@ export const Inscription = () => {
     tel: "",
   })
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [register, { isLoading }] = useRegisterMutation()
 
   // Regex patterns
-  const nomRegex = /^[A-Za-zÀ-ÿ]+$/ // Only alphabetic characters (including accented)
-  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/ // Simple email pattern
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/ // Strong password (min 8 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char)
+  const nomRegex = /^[A-Za-zÀ-ÿ]+$/ // Caractères alphabétiques (incluant les accents)
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/ // Format email
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/ // Mot de passe fort
 
   const handleChange = (e) => {
     setFormData({
@@ -34,159 +32,180 @@ export const Inscription = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const { name, firstname, email, password, cin, role, tel } = formData
 
-    // Vérification des données avant envoi
-    console.log("Données du formulaire avant envoi:", formData)
+    // Vérification des champs vides
+    if (!name || !firstname || !email || !password || !cin || !role || !tel) {
+      setError("Tous les champs sont obligatoires.")
+      return
+    }
+
+    // Validation du nom
+    if (!nomRegex.test(name)) {
+      setError("Le nom ne doit contenir que des lettres.")
+      return
+    }
+
+    // Validation de l'email
+    if (!emailRegex.test(email)) {
+      setError("Veuillez entrer un email valide.")
+      return
+    }
+
+    // Validation du mot de passe
+    if (!passwordRegex.test(password)) {
+      setError(
+        "Le mot de passe doit comporter au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.",
+      )
+      return
+    }
+
+    setError("")
+    setSuccess("")
 
     try {
       const response = await register(formData).unwrap()
-      console.log("Réponse du serveur:", response)
-      navigate("/")
+      console.log("Inscription réussie:", response)
+
+      // Réinitialiser le formulaire
+      setFormData({
+        name: "",
+        firstname: "",
+        email: "",
+        password: "",
+        cin: "",
+        role: "",
+        tel: "",
+      })
+
+      setSuccess("Utilisateur créé avec succès!")
     } catch (err) {
-      console.error("Registration error:", err)
+      console.error("Erreur d'inscription:", err)
       setError(err.data?.message || "Une erreur s'est produite lors de l'inscription.")
     }
   }
 
   return (
-    <div className="form2">
-      <div className="container mt-5 content">
-        <div className="container mt-5">
-          <h2>Formulaire d'Inscription</h2>
-          <form onSubmit={handleSubmit} className="border rounded p-4 m-5">
-            <h6>Veuillez remplir le formulaire ci-dessous :</h6>
+    <div className="inscription-container">
+      <h2>Créer un nouveau compte</h2>
+      <p className="inscription-subtitle">Créez un compte pour un nouvel administrateur ou agent</p>
 
-            {/* Display error message if any */}
-            {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
 
-            {/* Nom */}
-            <div className="mb-3">
-              <label htmlFor="name" className="form-label text-start d-block">
-                Nom
-              </label>
-              <input
-                type="text"
-                className="form-control text-start d-block"
-                id="name"
-                name="name"
-                placeholder="Votre nom"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="inscription-form">
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="name">Nom</label>
+            <input
+              type="text"
+              className="form-control"
+              id="name"
+              name="name"
+              placeholder="Nom de famille"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-            {/* Prénom */}
-            <div className="mb-3">
-              <label htmlFor="firstname" className="form-label text-start d-block">
-                Prénom
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                id="firstname"
-                name="firstname"
-                placeholder="Votre prénom"
-                value={formData.firstname}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* E-mail */}
-            <div className="mb-3">
-              <label htmlFor="email" className="form-label text-start d-block">
-                E-mail
-              </label>
-              <input
-                type="email"
-                className="form-control"
-                id="email"
-                name="email"
-                placeholder="Votre e-mail"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* Mot de Passe */}
-            <div className="mb-3">
-              <label htmlFor="password" className="form-label text-start d-block">
-                Mot de Passe
-              </label>
-              <input
-                type="password"
-                className="form-control"
-                id="password"
-                name="password"
-                placeholder="Mot de passe"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* CIN */}
-            <div className="mb-3">
-              <label htmlFor="cin" className="form-label text-start d-block">
-                CIN
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                id="cin"
-                name="cin"
-                placeholder="Votre CIN (8 chiffres)"
-                value={formData.cin}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* Role */}
-            <div className="mb-3">
-              <label htmlFor="role" className="form-label text-start d-block">
-                Role
-              </label>
-              <select
-                className="form-control"
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Sélectionner un rôle</option>
-                <option value="admin">Admin</option>
-                <option value="agent">Agent</option>
-              </select>
-            </div>
-
-            {/* Tel */}
-            <div className="mb-3">
-              <label htmlFor="tel" className="form-label text-start d-block">
-                Numéro de téléphone
-              </label>
-              <input
-                type="tel"
-                className="form-control"
-                id="tel"
-                name="tel"
-                placeholder="Votre numéro de téléphone"
-                value={formData.tel}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* Submit button */}
-            <button type="submit" className="btn-inscription" disabled={isLoading}>
-              {isLoading ? "Inscription en cours..." : "S'inscrire"}
-            </button>
-          </form>
+          <div className="form-group">
+            <label htmlFor="firstname">Prénom</label>
+            <input
+              type="text"
+              className="form-control"
+              id="firstname"
+              name="firstname"
+              placeholder="Prénom"
+              value={formData.firstname}
+              onChange={handleChange}
+              required
+            />
+          </div>
         </div>
-      </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            className="form-control"
+            id="email"
+            name="email"
+            placeholder="Email professionnel"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Mot de passe</label>
+          <input
+            type="password"
+            className="form-control"
+            id="password"
+            name="password"
+            placeholder="Mot de passe"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <small className="form-text text-muted">
+            Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un
+            caractère spécial.
+          </small>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="cin">CIN</label>
+            <input
+              type="text"
+              className="form-control"
+              id="cin"
+              name="cin"
+              placeholder="Carte d'identité nationale"
+              value={formData.cin}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="role">Rôle</label>
+            <select
+              className="form-control"
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Sélectionner un rôle</option>
+              <option value="admin">Administrateur</option>
+              <option value="agent">Agent</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="tel">Téléphone</label>
+          <input
+            type="tel"
+            className="form-control"
+            id="tel"
+            name="tel"
+            placeholder="Numéro de téléphone"
+            value={formData.tel}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary inscription-button" disabled={isLoading}>
+          {isLoading ? "Création en cours..." : "Créer le compte"}
+        </button>
+      </form>
     </div>
   )
 }
