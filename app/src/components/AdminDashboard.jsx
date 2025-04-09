@@ -1,37 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
-import { useNavigate } from "react-router-dom"
-import { logout, selectUser } from "../redux/authSlice"
-import { useLogoutMutation } from "../redux/apiSlice"
-import { Sidebar } from "./Sidebar"
+import { useSelector } from "react-redux"
+import { selectUser } from "../redux/authSlice"
 import { Inscription } from "./Inscription"
 import { VisitorsList } from "./visitors/VisitorsList"
 import { AppointmentsList } from "./appointments/AppointmentsList"
 import { AppointmentsDashboard } from "./appointments/AppointmentsDashboard"
-import { ReportsDashboard } from "./reports/Dashboard"
 import "../styles/dashboard.css"
 
 export const AdminDashboard = () => {
   const [activeComponent, setActiveComponent] = useState("overview")
   const user = useSelector(selectUser)
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const [logoutApi] = useLogoutMutation()
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi().unwrap()
-      dispatch(logout())
-      navigate("/")
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error)
-      // Même en cas d'erreur, on déconnecte l'utilisateur localement
-      dispatch(logout())
-      navigate("/")
-    }
-  }
 
   const renderComponent = () => {
     switch (activeComponent) {
@@ -43,13 +23,13 @@ export const AdminDashboard = () => {
         return <AppointmentsList />
       case "appointments-dashboard":
         return <AppointmentsDashboard />
-      case "reports":
-        return <ReportsDashboard />
       case "overview":
       default:
         return (
           <div className="dashboard-overview">
-            <h2>Tableau de bord administrateur</h2>
+            <div className="admin-dashboard-header">
+              <h2>Tableau de bord administrateur</h2>
+            </div>
             <div className="welcome-card">
               <h3>
                 Bienvenue, {user?.firstname} {user?.name}
@@ -99,15 +79,8 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
-      <Sidebar
-        isAdmin={true}
-        activeComponent={activeComponent}
-        setActiveComponent={setActiveComponent}
-        onLogout={handleLogout}
-      />
+    <div className="dashboard-container admin-theme">
       <main className="dashboard-content">{renderComponent()}</main>
     </div>
   )
 }
-

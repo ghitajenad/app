@@ -1,11 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
-import { useNavigate } from "react-router-dom"
-import { logout, selectUser } from "../redux/authSlice"
-import { useLogoutMutation } from "../redux/apiSlice"
-import { Sidebar } from "./Sidebar"
+import { useSelector } from "react-redux"
+import { selectUser } from "../redux/authSlice"
 import { VisitorsList } from "./visitors/VisitorsList"
 import { AppointmentsList } from "./appointments/AppointmentsList"
 import "../styles/dashboard.css"
@@ -13,21 +10,6 @@ import "../styles/dashboard.css"
 export const AgentDashboard = () => {
   const [activeComponent, setActiveComponent] = useState("overview")
   const user = useSelector(selectUser)
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const [logoutApi] = useLogoutMutation()
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi().unwrap()
-      dispatch(logout())
-      navigate("/")
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error)
-      dispatch(logout())
-      navigate("/")
-    }
-  }
 
   const renderComponent = () => {
     switch (activeComponent) {
@@ -39,7 +21,9 @@ export const AgentDashboard = () => {
       default:
         return (
           <div className="dashboard-overview">
-            <h2>Tableau de bord agent</h2>
+            <div className="agent-dashboard-header">
+              <h2>Tableau de bord agent</h2>
+            </div>
             <div className="welcome-card">
               <h3>
                 Bienvenue, {user?.firstname} {user?.name}
@@ -107,15 +91,8 @@ export const AgentDashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
-      <Sidebar
-        isAdmin={false}
-        activeComponent={activeComponent}
-        setActiveComponent={setActiveComponent}
-        onLogout={handleLogout}
-      />
+    <div className="dashboard-container agent-theme">
       <main className="dashboard-content">{renderComponent()}</main>
     </div>
   )
 }
-

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRegisterMutation } from "../redux/apiSlice"
-import "../styles/inscription.css"
+import { useSelector } from "react-redux"
+import { selectToken } from "../redux/authSlice"
+import "../styles/auth.css"
 
 export const Inscription = () => {
   const [formData, setFormData] = useState({
@@ -11,164 +12,180 @@ export const Inscription = () => {
     email: "",
     password: "",
     cin: "",
-    role: "",
+    role: "agent", // Par défaut, on crée un agent
     tel: "",
   })
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [register, { isLoading }] = useRegisterMutation()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(false)
 
-  // Regex patterns
-  const nomRegex = /^[A-Za-zÀ-ÿ]+$/ // Caractères alphabétiques (incluant les accents)
-  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/ // Format email
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/ // Mot de passe fort
+  const token = useSelector(selectToken)
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const { name, firstname, email, password, cin, role, tel } = formData
-
-    // Vérification des champs vides
-    if (!name || !firstname || !email || !password || !cin || !role || !tel) {
-      setError("Tous les champs sont obligatoires.")
-      return
-    }
-
-    // Validation du nom
-    if (!nomRegex.test(name)) {
-      setError("Le nom ne doit contenir que des lettres.")
-      return
-    }
-
-    // Validation de l'email
-    if (!emailRegex.test(email)) {
-      setError("Veuillez entrer un email valide.")
-      return
-    }
-
-    // Validation du mot de passe
-    if (!passwordRegex.test(password)) {
-      setError(
-        "Le mot de passe doit comporter au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.",
-      )
-      return
-    }
-
-    setError("")
-    setSuccess("")
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
 
     try {
-      const response = await register(formData).unwrap()
-      console.log("Inscription réussie:", response)
+      // Validation des champs
+      if (
+        !formData.name ||
+        !formData.firstname ||
+        !formData.email ||
+        !formData.password ||
+        !formData.cin ||
+        !formData.tel
+      ) {
+        throw new Error("Tous les champs sont obligatoires.")
+      }
 
-      // Réinitialiser le formulaire
+      // Validation de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        throw new Error("Veuillez entrer une adresse email valide.")
+      }
+
+      // Validation du mot de passe
+      if (formData.password.length < 8) {
+        throw new Error("Le mot de passe doit contenir au moins 8 caractères.")
+      }
+
+      const response = await fetch("http://127.0.0.1:8004/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || `Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      setSuccess(true)
       setFormData({
         name: "",
         firstname: "",
         email: "",
         password: "",
         cin: "",
-        role: "",
+        role: "agent",
         tel: "",
       })
-
-      setSuccess("Utilisateur créé avec succès!")
     } catch (err) {
-      console.error("Erreur d'inscription:", err)
-      setError(err.data?.message || "Une erreur s'est produite lors de l'inscription.")
+      console.error("Error creating user:", err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="inscription-container">
-      <h2>Créer un nouveau compte</h2>
-      <p className="inscription-subtitle">Créez un compte pour un nouvel administrateur ou agent</p>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h2>Créer un nouveau compte</h2>
+          <p className="auth-subtitle">Ajouter un administrateur ou un agent</p>
+        </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+        {error && <div className="alert alert-danger">{error}</div>}
+        {success && <div className="alert alert-success">Compte créé avec succès!</div>}
 
-      <form onSubmit={handleSubmit} className="inscription-form">
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="name">Nom</label>
-            <input
-              type="text"
-              className="form-control"
-              id="name"
-              name="name"
-              placeholder="Nom de famille"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="name">Nom</label>
+              <input
+                type="text"
+                className="form-control"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="firstname">Prénom</label>
+              <input
+                type="text"
+                className="form-control"
+                id="firstname"
+                name="firstname"
+                value={formData.firstname}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="firstname">Prénom</label>
-            <input
-              type="text"
-              className="form-control"
-              id="firstname"
-              name="firstname"
-              placeholder="Prénom"
-              value={formData.firstname}
-              onChange={handleChange}
-              required
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                className="form-control"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="password">Mot de passe</label>
+              <input
+                type="password"
+                className="form-control"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength="8"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            className="form-control"
-            id="email"
-            name="email"
-            placeholder="Email professionnel"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
-          <input
-            type="password"
-            className="form-control"
-            id="password"
-            name="password"
-            placeholder="Mot de passe"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-          <small className="form-text text-muted">
-            Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un
-            caractère spécial.
-          </small>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="cin">CIN</label>
-            <input
-              type="text"
-              className="form-control"
-              id="cin"
-              name="cin"
-              placeholder="Carte d'identité nationale"
-              value={formData.cin}
-              onChange={handleChange}
-              required
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="cin">CIN</label>
+              <input
+                type="text"
+                className="form-control"
+                id="cin"
+                name="cin"
+                value={formData.cin}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="tel">Téléphone</label>
+              <input
+                type="text"
+                className="form-control"
+                id="tel"
+                name="tel"
+                value={formData.tel}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </div>
 
           <div className="form-group">
@@ -181,32 +198,25 @@ export const Inscription = () => {
               onChange={handleChange}
               required
             >
-              <option value="">Sélectionner un rôle</option>
-              <option value="admin">Administrateur</option>
               <option value="agent">Agent</option>
+              <option value="admin">Administrateur</option>
             </select>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label htmlFor="tel">Téléphone</label>
-          <input
-            type="tel"
-            className="form-control"
-            id="tel"
-            name="tel"
-            placeholder="Numéro de téléphone"
-            value={formData.tel}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <button type="submit" className="btn btn-primary inscription-button" disabled={isLoading}>
-          {isLoading ? "Création en cours..." : "Créer le compte"}
-        </button>
-      </form>
+          <button type="submit" className="btn btn-primary btn-block auth-button" disabled={loading}>
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Création en cours...
+              </>
+            ) : (
+              "Créer le compte"
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
 
+export default Inscription

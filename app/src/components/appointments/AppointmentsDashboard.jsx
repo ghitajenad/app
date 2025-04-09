@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { selectToken, selectIsAuthenticated, logout } from "../../redux/authSlice"
@@ -25,7 +25,7 @@ export const AppointmentsDashboard = () => {
 
       console.log("Fetching appointments with token:", token ? `${token.substring(0, 10)}...` : "No token")
 
-      // Utiliser la nouvelle API optimisée
+      // Utiliser la nouvelle API
       const response = await fetch("http://127.0.0.1:8004/api/rendezvous/today", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -83,51 +83,18 @@ export const AppointmentsDashboard = () => {
     }
   }
 
-  // Essayer également l'ancienne API si la nouvelle échoue
-  const fetchWithFallback = async () => {
-    try {
-      await fetchTodayAppointments()
-    } catch (err) {
-      console.log("Trying fallback API...")
-      try {
-        const response = await fetch("http://127.0.0.1:8004/api/appointments/today", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          credentials: "include",
-        })
-
-        if (!response.ok) {
-          throw new Error(`Fallback API failed: ${response.status} ${response.statusText}`)
-        }
-
-        const data = await response.json()
-
-        if (data.status === "success") {
-          setAppointments(data.data || [])
-          setError(null)
-        } else {
-          throw new Error(data.message || "Erreur lors de la récupération des rendez-vous")
-        }
-      } catch (fallbackErr) {
-        console.error("Fallback API also failed:", fallbackErr)
-        setError(`Les deux APIs ont échoué. Dernière erreur: ${fallbackErr.message}`)
-      } finally {
-        setLoading(false)
-      }
-    }
-  }
+  const fetchWithFallback = useCallback(async () => {
+    await fetchTodayAppointments()
+  }, [token, isAuthenticated, navigate, dispatch])
 
   // Charger les rendez-vous au chargement du composant
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchWithFallback()
     }
-  }, [isAuthenticated, token])
+  }, [isAuthenticated, token, fetchWithFallback])
 
-  // Utiliser des données de démonstration si l'API échoue
+  // Utiliser des données de démonstration
   const useDemoData = () => {
     const demoAppointments = [
       {
@@ -137,7 +104,7 @@ export const AppointmentsDashboard = () => {
         date: new Date().toISOString().split("T")[0],
         heure: "10:30",
         motif: "Consultation juridique",
-        statut: "confirmed",
+        statut: "confirmé",
       },
       {
         id: 2,
@@ -146,7 +113,7 @@ export const AppointmentsDashboard = () => {
         date: new Date().toISOString().split("T")[0],
         heure: "14:00",
         motif: "Dépôt de dossier",
-        statut: "scheduled",
+        statut: "programmé",
       },
       {
         id: 3,
@@ -155,7 +122,7 @@ export const AppointmentsDashboard = () => {
         date: new Date().toISOString().split("T")[0],
         heure: "16:15",
         motif: "Suivi de dossier",
-        statut: "completed",
+        statut: "terminé",
       },
     ]
 
@@ -164,7 +131,7 @@ export const AppointmentsDashboard = () => {
     setError(null)
   }
 
-  // Formater l'heure (HH:MM) à partir d'une date complète
+  // Formater l'heure (HH:MM) à partir d'une chaîne
   const formatTime = (timeString) => {
     if (!timeString) return "--:--"
     return timeString
@@ -204,7 +171,7 @@ export const AppointmentsDashboard = () => {
 
   // Réessayer les requêtes
   const handleRetry = () => {
-    fetchWithFallback()
+    fetchTodayAppointments()
   }
 
   return (
@@ -309,19 +276,9 @@ export const AppointmentsDashboard = () => {
                     <td>{appointment.motif || "Non spécifié"}</td>
                     <td>
                       <span
-                        className={`status-badge status-${appointment.statut === "completed" ? "completed" : appointment.statut === "confirmed" ? "confirmed" : "default"}`}
+                        className={`status-badge status-${appointment.statut === "terminé" ? "completed" : appointment.statut === "confirmé" ? "confirmed" : "default"}`}
                       >
-                        {appointment.statut === "completed"
-                          ? "Terminé"
-                          : appointment.statut === "confirmed"
-                            ? "Confirmé"
-                            : appointment.statut === "scheduled"
-                              ? "Planifié"
-                              : appointment.statut === "cancelled"
-                                ? "Annulé"
-                                : appointment.statut === "no_show"
-                                  ? "Absent"
-                                  : appointment.statut || "Non spécifié"}
+                        {appointment.statut || "Non spécifié"}
                       </span>
                     </td>
                   </tr>
@@ -334,4 +291,3 @@ export const AppointmentsDashboard = () => {
     </div>
   )
 }
-

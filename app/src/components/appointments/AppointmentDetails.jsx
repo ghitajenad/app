@@ -1,275 +1,346 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { useNavigate, useParams } from "react-router-dom"
 import { selectToken } from "../../redux/authSlice"
 import "../../styles/appointments.css"
 
 export const AppointmentDetails = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
+  const token = useSelector(selectToken)
+
   const [appointment, setAppointment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [editing, setEditing] = useState(false)
 
-  const token = useSelector(selectToken)
-  const navigate = useNavigate()
+  // État pour les champs modifiables
+  const [formData, setFormData] = useState({
+    date: "",
+    heure: "",
+    motif: "",
+    statut: "",
+    notes: "",
+  })
 
+  // Options pour les statuts
+  const statusOptions = [
+    { value: "programmé", label: "Programmé" },
+    { value: "confirmé", label: "Confirmé" },
+    { value: "terminé", label: "Terminé" },
+    { value: "annulé", label: "Annulé" },
+    { value: "absent", label: "Absent" },
+  ]
+
+  // Récupérer les détails du rendez-vous
   useEffect(() => {
-    const fetchAppointment = async () => {
+    const fetchAppointmentDetails = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8004/api/appointments/${id}`, {
+        setLoading(true)
+        setError(null)
+
+        // Déterminer quelle API utiliser en fonction de l'URL
+        const isRendezVous = window.location.pathname.includes("rendezvous")
+        const apiUrl = isRendezVous
+          ? `http://127.0.0.1:8004/api/rendezvous/${id}`
+          : `http://127.0.0.1:8004/api/appointments/${id}`
+
+        console.log("Fetching appointment details from:", apiUrl)
+
+        const response = await fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            Accept: "application/json",
           },
+          credentials: "include",
         })
 
         if (!response.ok) {
-          throw new Error("Failed to fetch appointment details")
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`)
         }
 
         const data = await response.json()
-        setAppointment(data.data)
-        setLoading(false)
+        console.log("Appointment data:", data)
+
+        if (data.status === "success") {
+          setAppointment(data.data)
+
+          // Formater la date pour l'input date
+          let formattedDate = ""
+          if (data.data.date) {
+            formattedDate = data.data.date
+          } else if (data.data.appointment_date) {
+            formattedDate = data.data.appointment_date.split("T")[0]
+          }
+
+          setFormData({
+            date: formattedDate,
+            heure: data.data.heure || "",
+            motif: data.data.motif || data.data.purpose || "",
+            statut: data.data.statut || data.data.status || "programmé",
+            notes: data.data.notes || "",
+          })
+        } else {
+          throw new Error(data.message || "Erreur lors de la récupération des détails du rendez-vous")
+        }
       } catch (err) {
+        console.error("Error fetching appointment details:", err)
         setError(err.message)
+      } finally {
         setLoading(false)
       }
     }
 
-    fetchAppointment()
+    if (token && id) {
+      fetchAppointmentDetails()
+    }
   }, [id, token])
 
-  const handleCheckIn = async () => {
+  // Gérer les changements dans le formulaire
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  // Soumettre les modifications
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
     try {
-      const response = await fetch(`http://127.0.0.1:8004/api/appointments/${id}/check-in`, {
-        method: "POST",
+      setLoading(true)
+
+      const updatedAppointment = {
+        date: formData.date,
+        heure: formData.heure,
+        motif: formData.motif,
+        statut: formData.statut,
+        notes: formData.notes,
+      }
+
+      console.log("Updating appointment with data:", updatedAppointment)
+
+      // Déterminer quelle API utiliser en fonction de l'URL
+      const isRendezVous = window.location.pathname.includes("rendezvous")
+      const apiUrl = isRendezVous
+        ? `http://127.0.0.1:8004/api/rendezvous/${id}`
+        : `http://127.0.0.1:8004/api/appointments/${id}`
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
+        body: JSON.stringify(updatedAppointment),
+        credentials: "include",
       })
 
       if (!response.ok) {
-        throw new Error("Failed to check in visitor")
+        const errorText = await response.text()
+        console.error("Error response:", errorText)
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
       }
 
-      const data = await response.json()
-      setAppointment(data.data)
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleCheckOut = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8004/api/appointments/${id}/check-out`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to check out visitor")
+      // Tenter de parser la réponse comme JSON
+      let data
+      try {
+        const responseText = await response.text()
+        data = JSON.parse(responseText)
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", e)
+        alert("Mise à jour effectuée, mais la réponse du serveur n'est pas au format JSON.")
+        setEditing(false)
+        return
       }
 
-      const data = await response.json()
-      setAppointment(data.data)
+      if (data.status === "success") {
+        // Mettre à jour les données locales
+        setAppointment(data.data)
+        setEditing(false)
+        alert("Rendez-vous mis à jour avec succès!")
+      } else {
+        throw new Error(data.message || "Erreur lors de la mise à jour du rendez-vous")
+      }
     } catch (err) {
+      console.error("Error updating appointment:", err)
       setError(err.message)
+      alert(`Erreur: ${err.message}`)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" }
-    return new Date(dateString).toLocaleDateString("fr-FR", options)
+  // Annuler l'édition
+  const handleCancel = () => {
+    setEditing(false)
   }
 
-  const formatDateTime = (dateTimeString) => {
-    if (!dateTimeString) return "N/A"
-
-    const options = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }
-    return new Date(dateTimeString).toLocaleDateString("fr-FR", options)
+  // Retourner à la liste des rendez-vous
+  const handleBack = () => {
+    navigate(-1)
   }
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "scheduled":
-        return "Planifié"
-      case "confirmed":
-        return "Confirmé"
-      case "completed":
-        return "Terminé"
-      case "cancelled":
-        return "Annulé"
-      default:
-        return status
-    }
-  }
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "scheduled":
-        return "status-scheduled"
-      case "confirmed":
-        return "status-confirmed"
-      case "completed":
-        return "status-completed"
-      case "cancelled":
-        return "status-cancelled"
-      default:
-        return ""
-    }
-  }
-
-  if (loading) {
+  if (loading && !appointment) {
     return (
-      <div className="text-center my-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Chargement...</span>
+      <div className="details-rendezvous-container">
+        <div className="loading-spinner">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Chargement...</span>
+          </div>
         </div>
       </div>
     )
   }
 
-  if (error) {
-    return <div className="alert alert-danger">{error}</div>
-  }
-
-  if (!appointment) {
-    return <div className="alert alert-warning">Rendez-vous non trouvé</div>
+  if (error && !appointment) {
+    return (
+      <div className="details-rendezvous-container">
+        <div className="alert alert-danger">
+          <h4>Erreur</h4>
+          <p>{error}</p>
+          <button className="btn btn-primary" onClick={handleBack}>
+            Retour
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="appointment-details-container">
-      <div className="appointment-details-header">
-        <h2>Détails du Rendez-vous</h2>
-        <div className="appointment-actions">
-          <button className="btn btn-outline-secondary me-2" onClick={() => navigate("/admin-dashboard/appointments")}>
-            <i className="fas fa-arrow-left me-1"></i> Retour
-          </button>
-
-          <button
-            className="btn btn-outline-primary me-2"
-            onClick={() => navigate(`/admin-dashboard/appointments/edit/${id}`)}
-          >
-            <i className="fas fa-edit me-1"></i> Modifier
-          </button>
-
-          {appointment.status === "scheduled" && (
-            <button className="btn btn-success" onClick={handleCheckIn}>
-              <i className="fas fa-sign-in-alt me-1"></i> Enregistrer l'arrivée
-            </button>
-          )}
-
-          {appointment.status === "confirmed" && (
-            <button className="btn btn-info" onClick={handleCheckOut}>
-              <i className="fas fa-sign-out-alt me-1"></i> Enregistrer le départ
-            </button>
-          )}
-        </div>
+    <div className="details-rendezvous-container">
+      <div className="details-rendezvous-header">
+        <h2>Détails du rendez-vous</h2>
+        <button className="btn btn-outline-secondary" onClick={handleBack}>
+          <i className="fas fa-arrow-left"></i> Retour
+        </button>
       </div>
 
-      <div className="appointment-details-card">
-        <div className="appointment-status">
-          <span className={`status-badge ${getStatusBadgeClass(appointment.status)}`}>
-            {getStatusLabel(appointment.status)}
-          </span>
-        </div>
-
-        <div className="appointment-info">
-          <div className="info-section">
-            <h3>Informations du rendez-vous</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <span className="info-label">Date:</span>
-                <span className="info-value">{formatDate(appointment.date)}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Créneau horaire:</span>
-                <span className="info-value">{appointment.time_slot}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Heure d'arrivée:</span>
-                <span className="info-value">{formatDateTime(appointment.check_in_time)}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Heure de départ:</span>
-                <span className="info-value">{formatDateTime(appointment.check_out_time)}</span>
-              </div>
+      {appointment && (
+        <div className="details-rendezvous-card">
+          <div className="details-rendezvous-info">
+            <h3>Informations du visiteur</h3>
+            <div className="info-row">
+              <div className="info-label">Nom:</div>
+              <div className="info-value">{appointment.nom || appointment.visitor?.lastname || "Non spécifié"}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Prénom:</div>
+              <div className="info-value">{appointment.prenom || appointment.visitor?.firstname || "Non spécifié"}</div>
             </div>
           </div>
 
-          {appointment.visitor && (
-            <div className="info-section">
-              <h3>Informations du visiteur</h3>
-              <div className="info-grid">
-                <div className="info-item">
-                  <span className="info-label">Nom:</span>
-                  <span className="info-value">{appointment.visitor.lastname}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Prénom:</span>
-                  <span className="info-value">{appointment.visitor.firstname}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">CIN:</span>
-                  <span className="info-value">{appointment.visitor.cin}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Téléphone:</span>
-                  <span className="info-value">{appointment.visitor.phone}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Email:</span>
-                  <span className="info-value">{appointment.visitor.email || "N/A"}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Motif de visite:</span>
-                  <span className="info-value">{appointment.visitor.visit_reason}</span>
-                </div>
+          <form onSubmit={handleSubmit} className="details-rendezvous-form">
+            <h3>Informations du rendez-vous</h3>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="date">Date</label>
+                <input
+                  type="text"
+                  id="date"
+                  name="date"
+                  className="form-control"
+                  value={formData.date}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  placeholder="YYYY-MM-DD"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="heure">Heure</label>
+                <input
+                  type="text"
+                  id="heure"
+                  name="heure"
+                  className="form-control"
+                  value={formData.heure}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  placeholder="HH:MM"
+                />
               </div>
             </div>
-          )}
 
-          {appointment.user && (
-            <div className="info-section">
-              <h3>Agent responsable</h3>
-              <div className="info-grid">
-                <div className="info-item">
-                  <span className="info-label">Nom:</span>
-                  <span className="info-value">{appointment.user.name}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Prénom:</span>
-                  <span className="info-value">{appointment.user.firstname}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Email:</span>
-                  <span className="info-value">{appointment.user.email}</span>
-                </div>
-              </div>
+            <div className="form-group">
+              <label htmlFor="motif">Motif</label>
+              <input
+                type="text"
+                id="motif"
+                name="motif"
+                className="form-control"
+                value={formData.motif}
+                onChange={handleChange}
+                disabled={!editing}
+              />
             </div>
-          )}
 
-          {appointment.notes && (
-            <div className="info-section">
-              <h3>Notes</h3>
-              <p className="appointment-notes">{appointment.notes}</p>
+            <div className="form-group">
+              <label htmlFor="statut">Statut</label>
+              <select
+                id="statut"
+                name="statut"
+                className="form-control"
+                value={formData.statut}
+                onChange={handleChange}
+                disabled={!editing}
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+
+            <div className="form-group">
+              <label htmlFor="notes">Notes</label>
+              <textarea
+                id="notes"
+                name="notes"
+                className="form-control"
+                rows="4"
+                value={formData.notes}
+                onChange={handleChange}
+                disabled={!editing}
+              ></textarea>
+            </div>
+
+            <div className="details-rendezvous-actions">
+              {editing ? (
+                <>
+                  <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+                    Annuler
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        Enregistrement...
+                      </>
+                    ) : (
+                      "Enregistrer"
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="btn btn-primary" onClick={() => setEditing(true)}>
+                  <i className="fas fa-edit"></i> Modifier
+                </button>
+              )}
+            </div>
+          </form>
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
+export default AppointmentDetails

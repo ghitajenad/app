@@ -1,0 +1,46 @@
+/* Styles pour le layout principal */
+.layout-container {
+    display: flex;
+    min-height: 100vh;
+  }
+  
+  .main-content {
+    flex: 1;
+    padding: 20px;
+    margin-left: 0;
+    transition: margin-left 0.3s ease-in-out;
+  }
+  
+  /* Styles pour les thèmes admin et agent */
+  body.admin-theme {
+    background-color: #f0f7ff; /* Bleu très clair pour l'admin */
+  }
+  
+  body.admin-theme .btn-primary {
+    background-color: #1976d2;
+    border-color: #1976d2;
+  }
+  
+  body.agent-theme {
+    background-color: #f5fff0; /* Vert très clair pour l'agent */
+  }
+  
+  body.agent-theme .btn-primary {
+    background-color: #388e3c;
+    border-color: #388e3c;
+  }
+  
+  /* Ajuster la marge sur les écrans larges uniquement */
+  @media (min-width: 992px) {
+    .main-content.with-fixed-sidebar {
+      margin-left: 250px;
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .main-content.with-fixed-sidebar {
+      margin-left: 0;
+    }
+  }
+  

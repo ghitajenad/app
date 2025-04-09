@@ -9,7 +9,10 @@ import { AppointmentForm } from "./components/appointments/AppointmentForm"
 import { AppointmentDetails } from "./components/appointments/AppointmentDetails"
 import { AppointmentsList } from "./components/appointments/AppointmentsList"
 import { AppointmentsDashboard } from "./components/appointments/AppointmentsDashboard"
+import { Inscription } from "./components/Inscription"
 import { VisitorsList } from "./components/visitors/VisitorsList"
+import { VisitorForm } from "./components/visitors/VisitorForm"
+import { Layout } from "./components/layout/Layout"
 
 // Composant de protection des routes admin
 const AdminRoute = ({ children }) => {
@@ -75,137 +78,172 @@ function App() {
             }
           />
 
-          {/* Routes protégées - Admin */}
-          <Route
-            path="/admin-dashboard"
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }
-          />
+          {/* Routes protégées avec Layout */}
+          <Route element={<Layout />}>
+            {/* Routes Admin */}
+            <Route
+              path="/admin-dashboard"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
 
-          {/* Routes pour les rendez-vous */}
-          <Route
-            path="/admin-dashboard/appointments"
-            element={
-              <AdminRoute>
-                <AppointmentsList />
-              </AdminRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/inscription"
+              element={
+                <AdminRoute>
+                  <Inscription />
+                </AdminRoute>
+              }
+            />
 
-          <Route
-            path="/admin-dashboard/appointments-dashboard"
-            element={
-              <AdminRoute>
-                <AppointmentsDashboard />
-              </AdminRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/appointments"
+              element={
+                <AdminRoute>
+                  <AppointmentsList />
+                </AdminRoute>
+              }
+            />
 
-          <Route
-            path="/admin-dashboard/appointments/new"
-            element={
-              <AdminRoute>
-                <AppointmentForm />
-              </AdminRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/appointments-dashboard"
+              element={
+                <AdminRoute>
+                  <AppointmentsDashboard />
+                </AdminRoute>
+              }
+            />
 
-          <Route
-            path="/admin-dashboard/appointments/:id"
-            element={
-              <AdminRoute>
-                <AppointmentDetails />
-              </AdminRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/appointments/new"
+              element={
+                <AdminRoute>
+                  <AppointmentForm />
+                </AdminRoute>
+              }
+            />
 
-          <Route
-            path="/admin-dashboard/appointments/edit/:id"
-            element={
-              <AdminRoute>
-                <AppointmentForm />
-              </AdminRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/appointments/:id"
+              element={
+                <AdminRoute>
+                  <AppointmentDetails />
+                </AdminRoute>
+              }
+            />
 
-          {/* Routes pour les visiteurs */}
-          <Route
-            path="/admin-dashboard/visitors"
-            element={
-              <AdminRoute>
-                <VisitorsList />
-              </AdminRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/rendezvous/:id"
+              element={
+                <AdminRoute>
+                  <AppointmentDetails />
+                </AdminRoute>
+              }
+            />
 
-          {/* Routes protégées - Agent */}
-          <Route
-            path="/agent-dashboard"
-            element={
-              <AgentRoute>
-                <AgentDashboard />
-              </AgentRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/appointments/edit/:id"
+              element={
+                <AdminRoute>
+                  <AppointmentForm />
+                </AdminRoute>
+              }
+            />
 
-          {/* Routes pour les rendez-vous (agent) */}
-          <Route
-            path="/agent-dashboard/appointments"
-            element={
-              <AgentRoute>
-                <AppointmentsList />
-              </AgentRoute>
-            }
-          />
+            <Route
+              path="/admin-dashboard/visitors"
+              element={
+                <AdminRoute>
+                  <VisitorsList />
+                </AdminRoute>
+              }
+            />
 
-          <Route
-            path="/agent-dashboard/appointments-dashboard"
-            element={
-              <AgentRoute>
-                <AppointmentsDashboard />
-              </AgentRoute>
-            }
-          />
+            <Route
+              path="/ajout-visiteur"
+              element={
+                <AdminRoute>
+                  <VisitorForm />
+                </AdminRoute>
+              }
+            />
 
-          <Route
-            path="/agent-dashboard/appointments/new"
-            element={
-              <AgentRoute>
-                <AppointmentForm />
-              </AgentRoute>
-            }
-          />
+            {/* Routes Agent */}
+            <Route
+              path="/agent-dashboard"
+              element={
+                <AgentRoute>
+                  <AgentDashboard />
+                </AgentRoute>
+              }
+            />
 
-          <Route
-            path="/agent-dashboard/appointments/:id"
-            element={
-              <AgentRoute>
-                <AppointmentDetails />
-              </AgentRoute>
-            }
-          />
+            <Route
+              path="/agent-dashboard/appointments"
+              element={
+                <AgentRoute>
+                  <AppointmentsList />
+                </AgentRoute>
+              }
+            />
 
-          <Route
-            path="/agent-dashboard/appointments/edit/:id"
-            element={
-              <AgentRoute>
-                <AppointmentForm />
-              </AgentRoute>
-            }
-          />
+            <Route
+              path="/agent-dashboard/appointments-dashboard"
+              element={
+                <AgentRoute>
+                  <AppointmentsDashboard />
+                </AgentRoute>
+              }
+            />
 
-          {/* Routes pour les visiteurs (agent) */}
-          <Route
-            path="/agent-dashboard/visitors"
-            element={
-              <AgentRoute>
-                <VisitorsList />
-              </AgentRoute>
-            }
-          />
+            <Route
+              path="/agent-dashboard/appointments/new"
+              element={
+                <AgentRoute>
+                  <AppointmentForm />
+                </AgentRoute>
+              }
+            />
+
+            <Route
+              path="/agent-dashboard/appointments/:id"
+              element={
+                <AgentRoute>
+                  <AppointmentDetails />
+                </AgentRoute>
+              }
+            />
+
+            <Route
+              path="/agent-dashboard/rendezvous/:id"
+              element={
+                <AgentRoute>
+                  <AppointmentDetails />
+                </AgentRoute>
+              }
+            />
+
+            <Route
+              path="/agent-dashboard/appointments/edit/:id"
+              element={
+                <AgentRoute>
+                  <AppointmentForm />
+                </AgentRoute>
+              }
+            />
+
+            <Route
+              path="/agent-dashboard/visitors"
+              element={
+                <AgentRoute>
+                  <VisitorsList />
+                </AgentRoute>
+              }
+            />
+          </Route>
 
           {/* Redirection pour les routes inconnues */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -216,4 +254,3 @@ function App() {
 }
 
 export default App
-

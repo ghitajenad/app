@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { selectToken, logout } from "../../redux/authSlice"
@@ -56,7 +56,7 @@ export const VisitorsList = () => {
   }, [modalRef])
 
   // Récupérer la liste des visiteurs
-  const fetchVisitors = async () => {
+  const fetchVisitors = useCallback(async () => {
     setLoading(true)
     try {
       if (!token) {
@@ -103,7 +103,7 @@ export const VisitorsList = () => {
       setError(err.message)
       setLoading(false)
     }
-  }
+  }, [token, currentPage, searchTerm, sortField, sortDirection, dispatch, navigate])
 
   // Récupérer les détails d'un visiteur
   const fetchVisitorDetails = async (id) => {
@@ -184,7 +184,7 @@ export const VisitorsList = () => {
     if (token) {
       fetchVisitors()
     }
-  }, [currentPage, searchTerm, sortField, sortDirection, token])
+  }, [currentPage, searchTerm, sortField, sortDirection, token, fetchVisitors])
 
   const handleSort = (field) => {
     if (field === sortField) {
@@ -205,7 +205,7 @@ export const VisitorsList = () => {
   }
 
   const handleAddVisitor = () => {
-    navigate("/admin-dashboard/visitors/new")
+    navigate("/ajout-visiteur")
   }
 
   // Ouvrir le modal d'édition
@@ -573,4 +573,3 @@ export const VisitorsList = () => {
     </div>
   )
 }
-
