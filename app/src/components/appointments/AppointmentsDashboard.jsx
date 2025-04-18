@@ -17,15 +17,11 @@ export const AppointmentsDashboard = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  // Fonction pour récupérer les rendez-vous du jour
   const fetchTodayAppointments = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      console.log("Fetching appointments with token:", token ? `${token.substring(0, 10)}...` : "No token")
-
-      // Utiliser la nouvelle API
       const response = await fetch("http://127.0.0.1:8004/api/rendezvous/today", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -35,7 +31,6 @@ export const AppointmentsDashboard = () => {
         credentials: "include",
       })
 
-      // Enregistrer les informations de débogage
       const responseDebugInfo = {
         status: response.status,
         statusText: response.statusText,
@@ -44,20 +39,15 @@ export const AppointmentsDashboard = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error("API Error:", errorData)
-
         if (response.status === 401) {
           dispatch(logout())
           navigate("/")
           throw new Error("Session expirée. Veuillez vous reconnecter.")
         }
-
         throw new Error(errorData.message || `Erreur ${response.status}: ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log("Appointments data:", data)
-
       if (data.status === "success") {
         setAppointments(data.data || [])
         setDebugInfo({
@@ -71,7 +61,6 @@ export const AppointmentsDashboard = () => {
         throw new Error(data.message || "Erreur lors de la récupération des rendez-vous")
       }
     } catch (err) {
-      console.error("Error fetching appointments:", err)
       setError(err.message)
       setDebugInfo((prev) => ({
         ...prev,
@@ -87,89 +76,63 @@ export const AppointmentsDashboard = () => {
     await fetchTodayAppointments()
   }, [token, isAuthenticated, navigate, dispatch])
 
-  // Charger les rendez-vous au chargement du composant
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchWithFallback()
     }
   }, [isAuthenticated, token, fetchWithFallback])
 
-  // Utiliser des données de démonstration
   const useDemoData = () => {
     const demoAppointments = [
       {
         id: 1,
-        nom: "Alami",
-        prenom: "Mohammed",
-        date: new Date().toISOString().split("T")[0],
-        heure: "10:30",
+        visitor_name: "Mohammed Alami",
+        slot: "10:30",
         motif: "Consultation juridique",
         statut: "confirmé",
       },
       {
         id: 2,
-        nom: "Benali",
-        prenom: "Fatima",
-        date: new Date().toISOString().split("T")[0],
-        heure: "14:00",
+        visitor_name: "Fatima Benali",
+        slot: "14:00",
         motif: "Dépôt de dossier",
         statut: "programmé",
       },
       {
         id: 3,
-        nom: "Tazi",
-        prenom: "Ahmed",
-        date: new Date().toISOString().split("T")[0],
-        heure: "16:15",
+        visitor_name: "Ahmed Tazi",
+        slot: "16:15",
         motif: "Suivi de dossier",
         statut: "terminé",
       },
     ]
-
     setAppointments(demoAppointments)
     setLoading(false)
     setError(null)
   }
 
-  // Formater l'heure (HH:MM) à partir d'une chaîne
   const formatTime = (timeString) => {
     if (!timeString) return "--:--"
     return timeString
   }
 
-  // Formater la date (JJ/MM/YYYY)
-  const formatDate = (dateString) => {
-    if (!dateString) return "--/--/----"
-    try {
-      const [year, month, day] = dateString.split("-")
-      return `${day}/${month}/${year}`
-    } catch (e) {
-      return dateString
-    }
-  }
-
-  // Naviguer vers les rendez-vous à venir
-  const navigateToUpcoming = () => {
-    navigate("/admin-dashboard/appointments", { state: { filter: "upcoming" } })
-  }
-
-  // Naviguer vers l'historique des rendez-vous
-  const navigateToHistory = () => {
-    navigate("/admin-dashboard/appointments", { state: { filter: "history" } })
-  }
-
-  // Naviguer vers le formulaire de création de rendez-vous
   const navigateToNewAppointment = () => {
     navigate("/admin-dashboard/appointments/new")
   }
 
-  // Gérer la reconnexion
+  const navigateToUpcoming = () => {
+    navigate("/admin-dashboard/appointments", { state: { filter: "upcoming" } })
+  }
+
+  const navigateToHistory = () => {
+    navigate("/admin-dashboard/appointments", { state: { filter: "history" } })
+  }
+
   const handleReconnect = () => {
     dispatch(logout())
     navigate("/")
   }
 
-  // Réessayer les requêtes
   const handleRetry = () => {
     fetchTodayAppointments()
   }
@@ -178,7 +141,6 @@ export const AppointmentsDashboard = () => {
     <div className="appointments-dashboard">
       <h2>Tableau de bord des rendez-vous</h2>
 
-      {/* Cards en haut de page */}
       <div className="dashboard-cards">
         <div className="dashboard-card upcoming" onClick={navigateToUpcoming}>
           <div className="card-icon">
@@ -201,7 +163,6 @@ export const AppointmentsDashboard = () => {
         </div>
       </div>
 
-      {/* Tableau des rendez-vous du jour */}
       <div className="today-appointments">
         <div className="appointments-header">
           <h3>Rendez-vous du jour</h3>
@@ -233,7 +194,6 @@ export const AppointmentsDashboard = () => {
                 Utiliser des données de démonstration
               </button>
             </div>
-
             {debugInfo && (
               <div className="mt-3">
                 <h5>Informations de débogage:</h5>
@@ -258,25 +218,35 @@ export const AppointmentsDashboard = () => {
             <table className="table table-hover appointments-table">
               <thead>
                 <tr>
-                  <th>Nom et Prénom</th>
-                  <th>Date</th>
-                  <th>Heure</th>
+                  <th>Créneau</th>
+                  <th>Visiteur</th>
                   <th>Motif</th>
                   <th>Statut</th>
                 </tr>
               </thead>
               <tbody>
                 {appointments.map((appointment) => (
-                  <tr key={appointment.id} onClick={() => navigate(`/admin-dashboard/appointments/${appointment.id}`)}>
+                  <tr
+                    key={appointment.id}
+                    onClick={() =>
+                      navigate(`/admin-dashboard/appointments/${appointment.id}`)
+                    }
+                  >
+                    <td>{formatTime(appointment.slot || appointment.heure)}</td>
                     <td>
-                      {appointment.nom || ""} {appointment.prenom || ""}
+                      {appointment.visitor_name ||
+                        `${appointment.nom || ""} ${appointment.prenom || ""}`}
                     </td>
-                    <td>{formatDate(appointment.date)}</td>
-                    <td>{formatTime(appointment.heure)}</td>
                     <td>{appointment.motif || "Non spécifié"}</td>
                     <td>
                       <span
-                        className={`status-badge status-${appointment.statut === "terminé" ? "completed" : appointment.statut === "confirmé" ? "confirmed" : "default"}`}
+                        className={`status-badge status-${
+                          appointment.statut === "terminé"
+                            ? "completed"
+                            : appointment.statut === "confirmé"
+                            ? "confirmed"
+                            : "default"
+                        }`}
                       >
                         {appointment.statut || "Non spécifié"}
                       </span>

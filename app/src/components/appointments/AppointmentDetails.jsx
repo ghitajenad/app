@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { selectToken } from "../../redux/authSlice"
 import "../../styles/appointments.css"
+import { format, parseISO } from 'date-fns'
 
 export const AppointmentDetails = () => {
   const { id } = useParams()
@@ -15,8 +16,8 @@ export const AppointmentDetails = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
-  // État pour les champs modifiables
   const [formData, setFormData] = useState({
     date: "",
     heure: "",
@@ -25,7 +26,6 @@ export const AppointmentDetails = () => {
     notes: "",
   })
 
-  // Options pour les statuts
   const statusOptions = [
     { value: "programmé", label: "Programmé" },
     { value: "confirmé", label: "Confirmé" },
@@ -34,20 +34,42 @@ export const AppointmentDetails = () => {
     { value: "absent", label: "Absent" },
   ]
 
-  // Récupérer les détails du rendez-vous
+  const formatTime = (dateString) => {
+    const options = { hour: '2-digit', minute: '2-digit', hour12: false }
+    return new Date(dateString).toLocaleTimeString('fr-FR', options)
+  }
+
+  const formatTimed = (dateString) => {
+    const options = { hour: '2-digit', minute: '2-digit', hour12: false }
+    return new Date(dateString).toLocaleTimeString('fr-FR', options)
+  }
+  // const getTimeFromDate = (dateStr) => {
+  //   const date = new Date(dateStr);
+  //   return date.toISOString().substring(11, 16); 
+  // };
+
+  const formatToHHMM = (value) => {
+    if (!value) return "";
+  
+    const date = new Date(value);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+  
+    return `${hours}:${minutes}`; // Pas de décalage ici
+  };
+  
+  
+
   useEffect(() => {
     const fetchAppointmentDetails = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        // Déterminer quelle API utiliser en fonction de l'URL
         const isRendezVous = window.location.pathname.includes("rendezvous")
         const apiUrl = isRendezVous
           ? `http://127.0.0.1:8004/api/rendezvous/${id}`
           : `http://127.0.0.1:8004/api/appointments/${id}`
-
-        console.log("Fetching appointment details from:", apiUrl)
 
         const response = await fetch(apiUrl, {
           headers: {
@@ -63,43 +85,36 @@ export const AppointmentDetails = () => {
         }
 
         const data = await response.json()
-        console.log("Appointment data:", data)
 
         if (data.status === "success") {
           setAppointment(data.data)
 
-          // Formater la date pour l'input date
           let formattedDate = ""
           if (data.data.date) {
-            formattedDate = data.data.date
+            formattedDate = format(parseISO(data.data.date), "yyyy-MM-dd")
           } else if (data.data.appointment_date) {
-            formattedDate = data.data.appointment_date.split("T")[0]
+            formattedDate = format(parseISO(data.data.appointment_date), "yyyy-MM-dd")
           }
 
           setFormData({
             date: formattedDate,
-            heure: data.data.heure || "",
+            // j ai enleve la fct formattimed
+            heure: data.data.heure || data.data.appointment_date,
             motif: data.data.motif || data.data.purpose || "",
-            statut: data.data.statut || data.data.status || "programmé",
+            statut: data.data.statut || "",
             notes: data.data.notes || "",
           })
-        } else {
-          throw new Error(data.message || "Erreur lors de la récupération des détails du rendez-vous")
         }
       } catch (err) {
-        console.error("Error fetching appointment details:", err)
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
 
-    if (token && id) {
-      fetchAppointmentDetails()
-    }
+    fetchAppointmentDetails()
   }, [id, token])
 
-  // Gérer les changements dans le formulaire
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -108,9 +123,9 @@ export const AppointmentDetails = () => {
     }))
   }
 
-  // Soumettre les modifications
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitError(null)
 
     try {
       setLoading(true)
@@ -123,9 +138,6 @@ export const AppointmentDetails = () => {
         notes: formData.notes,
       }
 
-      console.log("Updating appointment with data:", updatedAppointment)
-
-      // Déterminer quelle API utiliser en fonction de l'URL
       const isRendezVous = window.location.pathname.includes("rendezvous")
       const apiUrl = isRendezVous
         ? `http://127.0.0.1:8004/api/rendezvous/${id}`
@@ -144,24 +156,20 @@ export const AppointmentDetails = () => {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error("Error response:", errorText)
         throw new Error(`Erreur ${response.status}: ${response.statusText}`)
       }
 
-      // Tenter de parser la réponse comme JSON
       let data
       try {
         const responseText = await response.text()
         data = JSON.parse(responseText)
       } catch (e) {
-        console.error("Failed to parse response as JSON:", e)
         alert("Mise à jour effectuée, mais la réponse du serveur n'est pas au format JSON.")
         setEditing(false)
         return
       }
 
       if (data.status === "success") {
-        // Mettre à jour les données locales
         setAppointment(data.data)
         setEditing(false)
         alert("Rendez-vous mis à jour avec succès!")
@@ -169,23 +177,14 @@ export const AppointmentDetails = () => {
         throw new Error(data.message || "Erreur lors de la mise à jour du rendez-vous")
       }
     } catch (err) {
-      console.error("Error updating appointment:", err)
-      setError(err.message)
-      alert(`Erreur: ${err.message}`)
+      setSubmitError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  // Annuler l'édition
-  const handleCancel = () => {
-    setEditing(false)
-  }
-
-  // Retourner à la liste des rendez-vous
-  const handleBack = () => {
-    navigate(-1)
-  }
+  const handleCancel = () => setEditing(false)
+  const handleBack = () => navigate(-1)
 
   if (loading && !appointment) {
     return (
@@ -205,9 +204,7 @@ export const AppointmentDetails = () => {
         <div className="alert alert-danger">
           <h4>Erreur</h4>
           <p>{error}</p>
-          <button className="btn btn-primary" onClick={handleBack}>
-            Retour
-          </button>
+          <button className="btn btn-primary" onClick={handleBack}>Retour</button>
         </div>
       </div>
     )
@@ -242,76 +239,96 @@ export const AppointmentDetails = () => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="date">Date</label>
-                <input
-                  type="text"
-                  id="date"
-                  name="date"
-                  className="form-control"
-                  value={formData.date}
-                  onChange={handleChange}
-                  disabled={!editing}
-                  placeholder="YYYY-MM-DD"
-                />
+                {editing ? (
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    className="form-control"
+                    value={formData.date}
+                    onChange={handleChange}
+                  />
+                ) : (
+                  <div className="form-control-plaintext">{formData.date || "Non spécifié"}</div>
+                )}
               </div>
 
               <div className="form-group">
                 <label htmlFor="heure">Heure</label>
-                <input
-                  type="text"
-                  id="heure"
-                  name="heure"
-                  className="form-control"
-                  value={formData.heure}
-                  onChange={handleChange}
-                  disabled={!editing}
-                  placeholder="HH:MM"
-                />
+                {editing ? (
+                  <input
+                    type="time"
+                    id="heure"
+                    name="heure"
+                    className="form-control"
+                    value={formatToHHMM(formData.heure)}
+                    onChange={handleChange}
+                    placeholder="HH:MM"
+                  />
+                ) : (
+                  <div className="form-control-plaintext">{formatToHHMM(formData.heure) || "Non spécifié"}</div>
+                )}
               </div>
             </div>
 
             <div className="form-group">
               <label htmlFor="motif">Motif</label>
-              <input
-                type="text"
-                id="motif"
-                name="motif"
-                className="form-control"
-                value={formData.motif}
-                onChange={handleChange}
-                disabled={!editing}
-              />
+              {editing ? (
+                <input
+                  type="text"
+                  id="motif"
+                  name="motif"
+                  className="form-control"
+                  value={formData.motif}
+                  onChange={handleChange}
+                />
+              ) : (
+                <div className="form-control-plaintext">{formData.motif || "Non spécifié"}</div>
+              )}
             </div>
 
             <div className="form-group">
               <label htmlFor="statut">Statut</label>
-              <select
-                id="statut"
-                name="statut"
-                className="form-control"
-                value={formData.statut}
-                onChange={handleChange}
-                disabled={!editing}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              {editing ? (
+                <select
+                  id="statut"
+                  name="statut"
+                  className="form-control"
+                  value={formData.statut}
+                  onChange={handleChange}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="form-control-plaintext">{formData.statut || "Non spécifié"}</div>
+              )}
             </div>
 
             <div className="form-group">
               <label htmlFor="notes">Notes</label>
-              <textarea
-                id="notes"
-                name="notes"
-                className="form-control"
-                rows="4"
-                value={formData.notes}
-                onChange={handleChange}
-                disabled={!editing}
-              ></textarea>
+              {editing ? (
+                <textarea
+                  id="notes"
+                  name="notes"
+                  className="form-control"
+                  rows="4"
+                  value={formData.notes}
+                  onChange={handleChange}
+                ></textarea>
+              ) : (
+                <div className="form-control-plaintext">{formData.notes || "Non spécifié"}</div>
+              )}
             </div>
+
+            {submitError && (
+              <div className="alert alert-danger">
+                <p>{submitError}</p>
+              </div>
+            )}
 
             <div className="details-rendezvous-actions">
               {editing ? (

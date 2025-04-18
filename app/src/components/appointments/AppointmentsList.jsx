@@ -114,6 +114,10 @@ export const AppointmentsList = () => {
     const options = { year: "numeric", month: "long", day: "numeric" }
     return new Date(dateString).toLocaleDateString("fr-FR", options)
   }
+  const formatTime = (dateString) => {
+    const options = { hour: '2-digit', minute: '2-digit', hour12: false };
+    return new Date(dateString).toLocaleTimeString('fr-FR', options);
+  };
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -221,8 +225,8 @@ export const AppointmentsList = () => {
                   appointments.map((appointment) => (
                     <tr key={appointment.id} onClick={() => handleViewAppointment(appointment.id)}>
                       <td>{appointment.id}</td>
-                      <td>{formatDate(appointment.date)}</td>
-                      <td>{appointment.time_slot}</td>
+                      <td>{formatDate(appointment.appointment_date)}</td>
+                      <td>{formatTime(appointment.appointment_date)}</td>
                       <td>
                         {appointment.visitor
                           ? `${appointment.visitor.firstname} ${appointment.visitor.lastname}`

@@ -15,7 +15,9 @@ export const AppointmentForm = () => {
     date: "",
     time_slot: "",
     notes: "",
+    purpose: "",
   })
+
   const [visitors, setVisitors] = useState([])
   const [availableTimeSlots, setAvailableTimeSlots] = useState([])
   const [loading, setLoading] = useState(false)
@@ -25,7 +27,7 @@ export const AppointmentForm = () => {
   const token = useSelector(selectToken)
   const navigate = useNavigate()
 
-  // Fetch visitors for dropdown
+  // Récupérer les visiteurs
   useEffect(() => {
     const fetchVisitors = async () => {
       try {
@@ -37,7 +39,7 @@ export const AppointmentForm = () => {
         })
 
         if (!response.ok) {
-          throw new Error("Failed to fetch visitors")
+          throw new Error("Erreur lors du chargement des visiteurs")
         }
 
         const data = await response.json()
@@ -50,7 +52,7 @@ export const AppointmentForm = () => {
     fetchVisitors()
   }, [token])
 
-  // Fetch appointment data if editing
+  // Charger rendez-vous existant si édition
   useEffect(() => {
     if (isEditing) {
       const fetchAppointment = async () => {
@@ -64,20 +66,24 @@ export const AppointmentForm = () => {
           })
 
           if (!response.ok) {
-            throw new Error("Failed to fetch appointment")
+            throw new Error("Erreur lors du chargement du rendez-vous")
           }
 
           const data = await response.json()
+
+          const dateTime = new Date(data.data.appointment_date)
+          const date = dateTime.toISOString().split("T")[0]
+          const time = dateTime.toTimeString().slice(0, 5)
+
           setFormData({
             visitor_id: data.data.visitor_id,
-            date: data.data.date,
-            time_slot: data.data.time_slot,
+            date: date,
+            time_slot: time,
             notes: data.data.notes || "",
+            purpose: data.data.purpose || "",
           })
 
-          // Fetch available time slots for this date
-          fetchTimeSlots(data.data.date)
-
+          fetchTimeSlots(date, time)
           setLoading(false)
         } catch (err) {
           setError(err.message)
@@ -89,8 +95,7 @@ export const AppointmentForm = () => {
     }
   }, [id, isEditing, token])
 
-  // Fetch available time slots when date changes
-  const fetchTimeSlots = async (date) => {
+  const fetchTimeSlots = async (date, currentSlot = "") => {
     if (!date) return
 
     try {
@@ -102,16 +107,19 @@ export const AppointmentForm = () => {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch available time slots")
+        throw new Error("Erreur lors du chargement des créneaux")
       }
 
       const data = await response.json()
-      setAvailableTimeSlots(data.data)
 
-      // If editing, add the current time slot to available slots if not already included
-      if (isEditing && formData.time_slot && !data.data.includes(formData.time_slot)) {
-        setAvailableTimeSlots([...data.data, formData.time_slot])
+      let slots = data.data
+
+      if (isEditing && currentSlot && !slots.includes(currentSlot)) {
+        slots.push(currentSlot)
       }
+
+      slots.sort()
+      setAvailableTimeSlots(slots)
     } catch (err) {
       setError(err.message)
     }
@@ -125,7 +133,6 @@ export const AppointmentForm = () => {
       [name]: value,
     })
 
-    // Fetch available time slots when date changes
     if (name === "date") {
       fetchTimeSlots(value)
     }
@@ -138,9 +145,20 @@ export const AppointmentForm = () => {
     setSuccess(null)
 
     try {
-      const url = isEditing ? `http://127.0.0.1:8004/api/appointments/${id}` : "http://127.0.0.1:8004/api/appointments"
+      const url = isEditing
+        ? `http://127.0.0.1:8004/api/appointments/${id}`
+        : "http://127.0.0.1:8004/api/appointments"
 
       const method = isEditing ? "PUT" : "POST"
+
+      const appointmentDate = `${formData.date} ${formData.time_slot}:00`
+
+      const payload = {
+        visitor_id: formData.visitor_id,
+        appointment_date: appointmentDate,
+        notes: formData.notes,
+        purpose: formData.purpose,
+      }
 
       const response = await fetch(url, {
         method,
@@ -148,18 +166,17 @@ export const AppointmentForm = () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to save appointment")
+        throw new Error(errorData.message || "Erreur lors de l'enregistrement")
       }
 
       const data = await response.json()
       setSuccess(isEditing ? "Rendez-vous mis à jour avec succès" : "Rendez-vous créé avec succès")
 
-      // Redirect after a short delay
       setTimeout(() => {
         navigate("/admin-dashboard/appointments")
       }, 2000)
@@ -206,7 +223,8 @@ export const AppointmentForm = () => {
             className="form-control"
             value={formData.date}
             onChange={handleChange}
-            min={new Date().toISOString().split("T")[0]} // Today or later
+            min={new Date().toISOString().split("T")[0]}
+            onKeyDown={(e) => e.preventDefault()}
             required
           />
         </div>
@@ -234,6 +252,19 @@ export const AppointmentForm = () => {
               Aucun créneau disponible pour cette date. Veuillez choisir une autre date.
             </small>
           )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="purpose">Motif de la visite</label>
+          <input
+            type="text"
+            id="purpose"
+            name="purpose"
+            className="form-control"
+            value={formData.purpose}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-group">
@@ -269,4 +300,3 @@ export const AppointmentForm = () => {
     </div>
   )
 }
-
