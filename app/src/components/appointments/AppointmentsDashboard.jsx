@@ -22,6 +22,12 @@ export const AppointmentsDashboard = () => {
       setLoading(true)
       setError(null)
 
+      // Ajouter des logs pour le débogage
+      console.log(
+        "Tentative de récupération des rendez-vous du jour avec le token:",
+        token ? `${token.substring(0, 10)}...` : "Aucun token",
+      )
+
       const response = await fetch("http://127.0.0.1:8004/api/rendezvous/today", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -37,17 +43,40 @@ export const AppointmentsDashboard = () => {
         headers: Object.fromEntries([...response.headers.entries()]),
       }
 
+      console.log("Réponse reçue:", responseDebugInfo)
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        if (response.status === 401) {
-          dispatch(logout())
-          navigate("/")
-          throw new Error("Session expirée. Veuillez vous reconnecter.")
+        let errorMessage = `Erreur ${response.status}: ${response.statusText}`
+
+        try {
+          const errorData = await response.json()
+          console.error("Détails de l'erreur:", errorData)
+          errorMessage = errorData.message || errorMessage
+
+          if (response.status === 401) {
+            dispatch(logout())
+            navigate("/")
+            throw new Error("Session expirée. Veuillez vous reconnecter.")
+          }
+        } catch (parseError) {
+          console.error("Impossible de parser la réponse d'erreur:", parseError)
         }
-        throw new Error(errorData.message || `Erreur ${response.status}: ${response.statusText}`)
+
+        throw new Error(errorMessage)
       }
 
-      const data = await response.json()
+      let data
+      try {
+        const responseText = await response.text()
+        console.log("Réponse brute:", responseText.substring(0, 200) + "...")
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error("Erreur lors du parsing de la réponse:", parseError)
+        throw new Error("La réponse du serveur n'est pas au format JSON valide")
+      }
+
+      console.log("Données reçues:", data)
+
       if (data.status === "success") {
         setAppointments(data.data || [])
         setDebugInfo({
@@ -61,6 +90,7 @@ export const AppointmentsDashboard = () => {
         throw new Error(data.message || "Erreur lors de la récupération des rendez-vous")
       }
     } catch (err) {
+      console.error("Erreur complète:", err)
       setError(err.message)
       setDebugInfo((prev) => ({
         ...prev,
@@ -114,6 +144,42 @@ export const AppointmentsDashboard = () => {
   const formatTime = (timeString) => {
     if (!timeString) return "--:--"
     return timeString
+  }
+
+  // Dans la fonction formatTime, ajouter une fonction pour obtenir la classe CSS du statut
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "scheduled":
+        return "status-default"
+      case "confirmed":
+        return "status-confirmed"
+      case "completed":
+        return "status-completed"
+      case "cancelled":
+        return "status-cancelled"
+      case "no_show":
+        return "status-no-show"
+      default:
+        return "status-default"
+    }
+  }
+
+  // Dans la fonction pour obtenir le libellé du statut
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "scheduled":
+        return "Programmé"
+      case "confirmed":
+        return "Confirmé"
+      case "completed":
+        return "Terminé"
+      case "cancelled":
+        return "Annulé"
+      case "no_show":
+        return "Absent"
+      default:
+        return status || "Non spécifié"
+    }
   }
 
   const navigateToNewAppointment = () => {
@@ -226,29 +292,14 @@ export const AppointmentsDashboard = () => {
               </thead>
               <tbody>
                 {appointments.map((appointment) => (
-                  <tr
-                    key={appointment.id}
-                    onClick={() =>
-                      navigate(`/admin-dashboard/appointments/${appointment.id}`)
-                    }
-                  >
+                  <tr key={appointment.id} onClick={() => navigate(`/admin-dashboard/appointments/${appointment.id}`)}>
                     <td>{formatTime(appointment.slot || appointment.heure)}</td>
-                    <td>
-                      {appointment.visitor_name ||
-                        `${appointment.nom || ""} ${appointment.prenom || ""}`}
-                    </td>
+                    <td>{appointment.visitor_name || `${appointment.nom || ""} ${appointment.prenom || ""}`}</td>
                     <td>{appointment.motif || "Non spécifié"}</td>
+                    {/* Dans la section du tableau qui affiche le statut, mettre à jour pour utiliser ces fonctions */}
                     <td>
-                      <span
-                        className={`status-badge status-${
-                          appointment.statut === "terminé"
-                            ? "completed"
-                            : appointment.statut === "confirmé"
-                            ? "confirmed"
-                            : "default"
-                        }`}
-                      >
-                        {appointment.statut || "Non spécifié"}
+                      <span className={`status-badge ${getStatusBadgeClass(appointment.status || appointment.statut)}`}>
+                        {getStatusLabel(appointment.status || appointment.statut)}
                       </span>
                     </td>
                   </tr>

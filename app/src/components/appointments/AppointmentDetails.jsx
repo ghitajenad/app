@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { selectToken } from "../../redux/authSlice"
 import "../../styles/appointments.css"
-import { format, parseISO } from 'date-fns'
+import { format, parseISO } from "date-fns"
 
 export const AppointmentDetails = () => {
   const { id } = useParams()
@@ -27,38 +27,36 @@ export const AppointmentDetails = () => {
   })
 
   const statusOptions = [
-    { value: "programmé", label: "Programmé" },
-    { value: "confirmé", label: "Confirmé" },
-    { value: "terminé", label: "Terminé" },
-    { value: "annulé", label: "Annulé" },
-    { value: "absent", label: "Absent" },
+    { value: "scheduled", label: "Programmé" },
+    { value: "confirmed", label: "Confirmé" },
+    { value: "completed", label: "Terminé" },
+    { value: "cancelled", label: "Annulé" },
+    { value: "no_show", label: "Absent" },
   ]
 
   const formatTime = (dateString) => {
-    const options = { hour: '2-digit', minute: '2-digit', hour12: false }
-    return new Date(dateString).toLocaleTimeString('fr-FR', options)
+    const options = { hour: "2-digit", minute: "2-digit", hour12: false }
+    return new Date(dateString).toLocaleTimeString("fr-FR", options)
   }
 
   const formatTimed = (dateString) => {
-    const options = { hour: '2-digit', minute: '2-digit', hour12: false }
-    return new Date(dateString).toLocaleTimeString('fr-FR', options)
+    const options = { hour: "2-digit", minute: "2-digit", hour12: false }
+    return new Date(dateString).toLocaleTimeString("fr-FR", options)
   }
   // const getTimeFromDate = (dateStr) => {
   //   const date = new Date(dateStr);
-  //   return date.toISOString().substring(11, 16); 
+  //   return date.toISOString().substring(11, 16);
   // };
 
   const formatToHHMM = (value) => {
-    if (!value) return "";
-  
-    const date = new Date(value);
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-  
-    return `${hours}:${minutes}`; // Pas de décalage ici
-  };
-  
-  
+    if (!value) return ""
+
+    const date = new Date(value)
+    const hours = date.getHours().toString().padStart(2, "0")
+    const minutes = date.getMinutes().toString().padStart(2, "0")
+
+    return `${hours}:${minutes}` // Pas de décalage ici
+  }
 
   useEffect(() => {
     const fetchAppointmentDetails = async () => {
@@ -204,7 +202,9 @@ export const AppointmentDetails = () => {
         <div className="alert alert-danger">
           <h4>Erreur</h4>
           <p>{error}</p>
-          <button className="btn btn-primary" onClick={handleBack}>Retour</button>
+          <button className="btn btn-primary" onClick={handleBack}>
+            Retour
+          </button>
         </div>
       </div>
     )

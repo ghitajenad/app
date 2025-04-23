@@ -16,6 +16,7 @@ export const AppointmentForm = () => {
     time_slot: "",
     notes: "",
     purpose: "",
+    status: "scheduled", // Ajouter une valeur par défaut pour le statut
   })
 
   const [visitors, setVisitors] = useState([])
@@ -26,6 +27,15 @@ export const AppointmentForm = () => {
 
   const token = useSelector(selectToken)
   const navigate = useNavigate()
+
+  // Ajouter cette constante après les autres déclarations de variables
+  const statusOptions = [
+    { value: "scheduled", label: "Programmé" },
+    { value: "confirmed", label: "Confirmé" },
+    { value: "completed", label: "Terminé" },
+    { value: "cancelled", label: "Annulé" },
+    { value: "no_show", label: "Absent" },
+  ]
 
   // Récupérer les visiteurs
   useEffect(() => {
@@ -81,6 +91,7 @@ export const AppointmentForm = () => {
             time_slot: time,
             notes: data.data.notes || "",
             purpose: data.data.purpose || "",
+            status: data.data.status || "scheduled",
           })
 
           fetchTimeSlots(date, time)
@@ -99,6 +110,10 @@ export const AppointmentForm = () => {
     if (!date) return
 
     try {
+      setAvailableTimeSlots([]) // Réinitialiser les créneaux pendant le chargement
+
+      console.log("Récupération des créneaux pour la date:", date)
+
       const response = await fetch(`http://127.0.0.1:8004/api/available-time-slots?date=${date}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -106,13 +121,18 @@ export const AppointmentForm = () => {
         },
       })
 
+      const data = await response.json()
+      console.log("Réponse des créneaux:", data)
+
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des créneaux")
+        throw new Error(data.message || "Erreur lors du chargement des créneaux")
       }
 
-      const data = await response.json()
+      if (data.status !== "success") {
+        throw new Error(data.message || "Erreur lors du chargement des créneaux")
+      }
 
-      let slots = data.data
+      const slots = data.data || []
 
       if (isEditing && currentSlot && !slots.includes(currentSlot)) {
         slots.push(currentSlot)
@@ -121,7 +141,9 @@ export const AppointmentForm = () => {
       slots.sort()
       setAvailableTimeSlots(slots)
     } catch (err) {
-      setError(err.message)
+      console.error("Erreur lors du chargement des créneaux:", err)
+      setError(`Erreur lors du chargement des créneaux: ${err.message}`)
+      setAvailableTimeSlots([]) // Réinitialiser en cas d'erreur
     }
   }
 
@@ -145,19 +167,43 @@ export const AppointmentForm = () => {
     setSuccess(null)
 
     try {
-      const url = isEditing
-        ? `http://127.0.0.1:8004/api/appointments/${id}`
-        : "http://127.0.0.1:8004/api/appointments"
+      // Validation côté client
+      if (!formData.visitor_id) {
+        throw new Error("Veuillez sélectionner un visiteur")
+      }
+      if (!formData.date) {
+        throw new Error("Veuillez sélectionner une date")
+      }
+      if (!formData.time_slot) {
+        throw new Error("Veuillez sélectionner un créneau horaire")
+      }
+      if (!formData.purpose) {
+        throw new Error("Veuillez indiquer le motif du rendez-vous")
+      }
+
+      const url = isEditing ? `http://127.0.0.1:8004/api/appointments/${id}` : "http://127.0.0.1:8004/api/appointments"
 
       const method = isEditing ? "PUT" : "POST"
 
-      const appointmentDate = `${formData.date} ${formData.time_slot}:00`
+      // Formater la date au format ISO pour s'assurer qu'elle est bien envoyée
+      // La conversion au format français sera gérée côté serveur
+      const formattedDate = formData.date // Garder le format YYYY-MM-DD du champ date HTML
+
+      console.log("Envoi des données:", {
+        visitor_id: formData.visitor_id,
+        date: formattedDate,
+        time_slot: formData.time_slot,
+        purpose: formData.purpose,
+        notes: formData.notes,
+      })
 
       const payload = {
         visitor_id: formData.visitor_id,
-        appointment_date: appointmentDate,
-        notes: formData.notes,
+        date: formattedDate,
+        time_slot: formData.time_slot,
         purpose: formData.purpose,
+        notes: formData.notes,
+        status: formData.status,
       }
 
       const response = await fetch(url, {
@@ -169,18 +215,28 @@ export const AppointmentForm = () => {
         body: JSON.stringify(payload),
       })
 
+      const data = await response.json()
+
+      console.log("Réponse du serveur:", data)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Erreur lors de l'enregistrement")
+        // Afficher les erreurs de validation spécifiques si disponibles
+        if (data.errors) {
+          const errorMessages = Object.values(data.errors).flat().join("\n")
+          throw new Error(`Erreurs de validation:\n${errorMessages}`)
+        }
+
+        // Sinon, afficher le message d'erreur général
+        throw new Error(data.message || "Erreur lors de l'enregistrement")
       }
 
-      const data = await response.json()
       setSuccess(isEditing ? "Rendez-vous mis à jour avec succès" : "Rendez-vous créé avec succès")
 
       setTimeout(() => {
         navigate("/admin-dashboard/appointments")
       }, 2000)
     } catch (err) {
+      console.error("Erreur:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -265,6 +321,25 @@ export const AppointmentForm = () => {
             onChange={handleChange}
             required
           />
+        </div>
+
+        {/* Ajouter le champ de sélection du statut avant le champ des notes */}
+        <div className="form-group">
+          <label htmlFor="status">Statut</label>
+          <select
+            id="status"
+            name="status"
+            className="form-select"
+            value={formData.status}
+            onChange={handleChange}
+            required
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">
